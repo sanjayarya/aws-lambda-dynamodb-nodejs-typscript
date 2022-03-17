@@ -2,7 +2,7 @@ import * as yup from "yup";
 
 export const PatientEntity = yup.object().shape({
   Surname: yup.string().required(),
-  GivenNames: yup.string().notRequired(),
+  GivenName: yup.string().notRequired(),
   PreferredName: yup.string().notRequired(),
   Title: yup.string().required(),
   DateOfBirth: yup.string().required(),

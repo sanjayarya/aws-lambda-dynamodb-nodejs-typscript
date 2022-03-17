@@ -9,9 +9,11 @@ const tableName = "PatientEntity";
 
 export const listPatients = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    const result = await docClient.scan({
-      TableName: tableName,
-    });
+    const result = await docClient
+      .scan({
+        TableName: tableName,
+      })
+      .promise();
 
     return {
       statusCode: 200,
