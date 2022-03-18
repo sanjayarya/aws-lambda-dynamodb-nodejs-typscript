@@ -8,7 +8,7 @@ region: us-east-1
 
 stack: patient-api-dev
 
-resources: 36
+resources: 40
 
 api keys:
 

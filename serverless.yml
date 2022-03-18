@@ -17,7 +17,19 @@ provider:
             - "dynamodb:Scan"
           Resource:
             - { "Fn::GetAtt": ["PatientEntity", "Arn"] }
-
+  httpApi:
+    authorizers:
+      serviceAuthorizer:
+        identitySource: $request.header.Authorization
+        issuerUrl:
+          Fn::Join:
+            - ""
+            - - "https://cognito-idp."
+              - "us-east-1"
+              - ".amazonaws.com/"
+              - Ref: PatientApiUserPool
+        audience:
+          - Ref: PatientApiUserPoolClient
 functions:
   addPatient:
     handler: src/add-handler.addPatient
@@ -25,6 +37,7 @@ functions:
       - httpApi:
           path: /patient
           method: post
+          authorizer: serviceAuthorizer
   getPatient:
     handler: src/get-handler.getPatient
     events:
@@ -37,12 +50,14 @@ functions:
       - httpApi:
           path: /patient/{id}
           method: put
+          authorizer: serviceAuthorizer
   deletePatient:
     handler: src/delete-handler.deletePatient
     events:
       - httpApi:
           path: /patient/{id}
           method: delete
+          authorizer: serviceAuthorizer
   listPatients:
     handler: src/list-handler.listPatients
     events:
@@ -54,6 +69,45 @@ plugins:
 
 resources:
   Resources:
+    HttpApi:
+      DependsOn: PatientApiUserPool
+    PatientApiUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: patient-api-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+    PatientApiUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: patient-api-user-pool
+        AllowedOAuthFlows:
+          - implicit
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthScopes:
+          - phone
+          - email
+          - openid
+          - profile
+          - aws.cognito.signin.user.admin
+        UserPoolId:
+          Ref: PatientApiUserPool
+        CallbackURLs:
+          - https://localhost:3000
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: false
+        SupportedIdentityProviders:
+          - COGNITO
+    serviceUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        UserPoolId:
+          Ref: PatientApiUserPool
+        Domain: patient-api-user-pool
     PatientEntity:
       Type: AWS::DynamoDB::Table
       Properties:
